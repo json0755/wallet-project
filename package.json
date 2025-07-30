@@ -1,0 +1,13 @@
+{
+  "name": "storage-reader",
+  "version": "1.0.0",
+  "description": "Read storage data from blockchain using Viem",
+  "main": "readStorage.js",
+  "type": "module",
+  "scripts": {
+    "read": "node readStorage.js"
+  },
+  "dependencies": {
+    "viem": "^2.0.0"
+  }
+}
