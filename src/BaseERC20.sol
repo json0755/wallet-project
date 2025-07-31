@@ -24,9 +24,14 @@ contract BaseERC20 is IERC20 {
     mapping(address => uint256) private _balances; // 记录每个地址的余额
     mapping(address => mapping(address => uint256)) private _allowances; // 记录授权信息
 
+    // ERC20 标准事件
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
     constructor(uint256 initialSupply) { // 构造函数，初始化总供应量
         _totalSupply = initialSupply; // 设置总供应量
         _balances[msg.sender] = initialSupply; // 初始代币分配给合约部署者
+        emit Transfer(address(0), msg.sender, initialSupply); // 发出初始铸造事件
     }
 
     function totalSupply() public view override returns (uint256) { // 返回总供应量
@@ -44,6 +49,7 @@ contract BaseERC20 is IERC20 {
     }
     function approve(address spender, uint256 amount) public override returns (bool) { // 授权spender可花费自己多少代币
         _allowances[msg.sender][spender] = amount; // 设置授权额度
+        emit Approval(msg.sender, spender, amount); // 发出授权事件
         return true;
     }
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) { // 代理转账
@@ -56,6 +62,7 @@ contract BaseERC20 is IERC20 {
         require(_balances[from] >= amount, "balance not enough"); // 检查余额
         _balances[from] -= amount; // 扣减发送方余额
         _balances[to] += amount; // 增加接收方余额
+        emit Transfer(from, to, amount); // 发出转账事件
     }
     // 新增：带回调的转账
     function transferWithCallback(address to, uint256 amount) external returns (bool) { // 带回调的转账函数
