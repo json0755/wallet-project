@@ -10,6 +10,90 @@ out/
 # Docs
 docs/
 
-# Dotenv file
+# Environment variables and secrets
 .env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
+# Node.js dependencies
+node_modules/
 /node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Package manager lock files (optional - uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+blockchain-indexer/backend/data/*.db
+blockchain-indexer/backend/data/*.sqlite*
+
+# Private keys and certificates
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+private-key*
+wallet-*
+keystore/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Build outputs
+build/
+dist/
+.next/
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Foundry specific
+.gas-snapshot
+.gas-report
+
+# Local development files
+local-*
+test-*
+demo-*
