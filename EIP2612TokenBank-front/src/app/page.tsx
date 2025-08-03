@@ -115,7 +115,8 @@ export default function Home() {
       message.loading('授权Permit2合约中...', 0);
       const approveTx = await tokenContract.approve(
         DEFAULT_CONTRACTS.PERMIT2,
-        ethers.MaxUint256
+        // ethers.MaxUint256
+        parseAmount(depositAmount, tokenDecimals)
       );
       await approveTx.wait();
       message.destroy();
