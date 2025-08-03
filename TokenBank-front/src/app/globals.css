@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义样式 */
+.ant-card {
+  border-radius: 12px;
+}
+
+.ant-btn {
+  border-radius: 8px;
+}
+
+.ant-input {
+  border-radius: 8px;
+}

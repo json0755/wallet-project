@@ -1,11 +1,13 @@
 {
-  "name": "storage-reader",
+  "name": "wallet-project",
   "version": "1.0.0",
-  "description": "Read storage data from blockchain using Viem",
+  "description": "Wallet project with EIP2612, Permit2, and TokenBank functionality",
   "main": "readStorage.js",
   "type": "module",
   "scripts": {
-    "read": "node readStorage.js"
+    "read": "node readStorage.js",
+    "deploy-eip2612": "./deploy_eip2612_tokenbank.sh",
+    "init-nft-market": "./initialize_and_test.sh"
   },
   "dependencies": {
     "viem": "^2.0.0"

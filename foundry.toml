@@ -8,11 +8,7 @@ remappings = [
 ]
 gas_reports = ["NFTMarket"]
 
-# Anvil local network configuration
 [rpc_endpoints]
-anvil = "http://127.0.0.1:8545"
-
-[etherscan]
-anvil = { key = "dummy", url = "http://127.0.0.1:8545" }
+localhost = "http://127.0.0.1:8545"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
