@@ -6,3 +6,4 @@ export {
   PERMIT_SINGLE_TYPES, 
   PERMIT_TRANSFER_FROM_TYPES 
 } from './Permit2';
+export { default as DelegateABI } from './Delegate.json';

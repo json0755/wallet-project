@@ -9,7 +9,9 @@ import {
   createTokenBankContract,
   createTokenContract,
   createPermit2Contract,
+  createDelegateContract,
   createPermit2Signature,
+  createAuthorizationSignature,
   formatAmount,
   parseAmount,
   truncateAddress,
@@ -17,7 +19,10 @@ import {
   resetNonce,
   getExpiration,
   getSigDeadline,
-  type PermitSingle
+  encodeBatchCalls,
+  encodeInitializeData,
+  type PermitSingle,
+  type Call
 } from '../utils/ethers';
 import { DEFAULT_CONTRACTS } from '../config/contracts';
 import { config } from 'process';
@@ -248,6 +253,95 @@ export default function Home() {
     }
   };
 
+  // Handle EIP7702 batch deposit
+  const handleEIP7702BatchDeposit = async () => {
+    console.log("handleEIP7702BatchDeposit--------")
+    debugger
+    if (!isConnected || !address || !depositAmount) {
+      message.error('请连接钱包并输入存款金额');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const tokenContract = createTokenContract(provider);
+      const bankContract = createTokenBankContract(provider);
+      const delegateContract = createDelegateContract(provider);
+
+      const amount = parseAmount(depositAmount, tokenDecimals);
+
+      // Step 1: Create authorization signature for EIP7702
+      message.loading('创建授权签名...', 0);
+      const authSignature = await createAuthorizationSignature(
+        signer,
+        DEFAULT_CONTRACTS.DELEGATE,
+        0 // nonce
+      );
+      message.destroy();
+
+      // Step 2: Prepare batch calls
+       const calls: Call[] = [
+         // Call 1: Initialize delegate contract
+         {
+           target: DEFAULT_CONTRACTS.DELEGATE,
+           value: BigInt(0),
+           data: encodeInitializeData()
+         },
+         // Call 2: Approve token to bank
+         {
+           target: DEFAULT_CONTRACTS.EIP2612_TOKEN,
+           value: BigInt(0),
+           data: tokenContract.interface.encodeFunctionData('approve', [
+             DEFAULT_CONTRACTS.TOKEN_BANK,
+             amount
+           ])
+         },
+         // Call 3: Deposit to bank
+         {
+           target: DEFAULT_CONTRACTS.TOKEN_BANK,
+           value: BigInt(0),
+           data: bankContract.interface.encodeFunctionData('deposit', [
+             amount,
+             address
+           ])
+         }
+       ];
+
+      // Step 3: Execute batch transaction via delegate
+      message.loading('执行批量交易...', 0);
+      const batchData = encodeBatchCalls(calls);
+      
+      // Create transaction with EIP7702 authorization
+      const tx = await signer.sendTransaction({
+        to: DEFAULT_CONTRACTS.DELEGATE,
+        data: delegateContract.interface.encodeFunctionData('batchExecute', [calls]),
+        value: 0,
+        // EIP7702 authorization list (simulated)
+        authorizationList: [{
+          chainId: 31337,
+          address: DEFAULT_CONTRACTS.DELEGATE,
+          nonce: 0,
+          signature: authSignature
+        }]
+      });
+
+      await tx.wait();
+      message.destroy();
+      message.success('EIP7702批量存款成功!');
+
+      // Reload balances
+      await loadBalances();
+      setDepositAmount('');
+    } catch (error: any) {
+      console.error('EIP7702 batch deposit error:', error);
+      message.error(`EIP7702批量存款失败: ${error.message || '未知错误'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-6xl mx-auto">
@@ -356,7 +450,7 @@ export default function Home() {
                 <Divider>存款方式</Divider>
 
                 <Row gutter={16}>
-                  <Col xs={24} sm={12}>
+                  <Col xs={24} sm={8}>
                     <Card 
                       title="🚀 Permit2 存款" 
                       className="border-2 border-blue-200 hover:border-blue-400 transition-colors"
@@ -399,7 +493,27 @@ export default function Home() {
                       )}
                     </Card>
                   </Col>
-                  <Col xs={24} sm={12}>
+                  <Col xs={24} sm={8}>
+                    <Card 
+                      title="⚡ EIP7702批量存款" 
+                      className="border-2 border-purple-200 hover:border-purple-400 transition-colors"
+                    >
+                      <Text className="text-gray-600 block mb-4">
+                        EIP7702实践：EOA授权+批量执行，一次交易完成授权和存款
+                      </Text>
+                      <Button
+                        type="primary"
+                        size="large"
+                        loading={loading}
+                        onClick={handleEIP7702BatchDeposit}
+                        disabled={!depositAmount}
+                        className="w-full bg-purple-600 hover:bg-purple-700 border-purple-600"
+                      >
+                        EIP7702批量存款
+                      </Button>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={8}>
                     <Card 
                       title="📝 标准存款" 
                       className="border-2 border-gray-200 hover:border-gray-400 transition-colors"
@@ -426,25 +540,32 @@ export default function Home() {
             {/* Contract Information */}
             <Card title="合约信息" className="mt-6 shadow-lg">
               <Row gutter={[16, 16]}>
-                <Col xs={24} sm={8}>
+                <Col xs={24} sm={6}>
                   <Text strong>EIP2612 Token:</Text>
                   <br />
                   <Text code className="text-xs">
                     {DEFAULT_CONTRACTS.EIP2612_TOKEN}
                   </Text>
                 </Col>
-                <Col xs={24} sm={8}>
+                <Col xs={24} sm={6}>
                   <Text strong>Token Bank:</Text>
                   <br />
                   <Text code className="text-xs">
                     {DEFAULT_CONTRACTS.TOKEN_BANK}
                   </Text>
                 </Col>
-                <Col xs={24} sm={8}>
+                <Col xs={24} sm={6}>
                   <Text strong>Permit2:</Text>
                   <br />
                   <Text code className="text-xs">
                     {DEFAULT_CONTRACTS.PERMIT2}
+                  </Text>
+                </Col>
+                <Col xs={24} sm={6}>
+                  <Text strong>Delegate:</Text>
+                  <br />
+                  <Text code className="text-xs">
+                    {DEFAULT_CONTRACTS.DELEGATE}
                   </Text>
                 </Col>
               </Row>

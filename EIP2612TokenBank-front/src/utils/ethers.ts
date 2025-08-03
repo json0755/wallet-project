@@ -128,3 +128,62 @@ export const createPermit2Contract = (signerOrProvider: ethers.Signer | ethers.P
     signerOrProvider
   );
 };
+
+// EIP7702 related functions
+export const createDelegateContract = (signerOrProvider: ethers.Signer | ethers.Provider) => {
+  const DelegateABI = require('../abi/Delegate.json');
+  return createContractInstance(
+    DEFAULT_CONTRACTS.DELEGATE,
+    DelegateABI,
+    signerOrProvider
+  );
+};
+
+export const createAuthorizationSignature = async (
+  signer: ethers.Signer,
+  contractAddress: string,
+  nonce: number = 0
+): Promise<string> => {
+  const chainId = await signer.provider?.getNetwork().then(n => n.chainId) || 31337;
+  
+  const authorizationData = {
+    chainId: Number(chainId),
+    address: contractAddress,
+    nonce: nonce
+  };
+  
+  const domain = {
+    name: 'EIP7702Authorization',
+    version: '1',
+    chainId: Number(chainId)
+  };
+  
+  const types = {
+    Authorization: [
+      { name: 'chainId', type: 'uint256' },
+      { name: 'address', type: 'address' },
+      { name: 'nonce', type: 'uint256' }
+    ]
+  };
+  
+  return await signer.signTypedData(domain, types, authorizationData);
+};
+
+export interface Call {
+  target: string;
+  value: bigint;
+  data: string;
+}
+
+export const encodeBatchCalls = (calls: Call[]): string => {
+  const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+  return abiCoder.encode(
+    ['tuple(address target, uint256 value, bytes data)[]'],
+    [calls.map(call => [call.target, call.value, call.data])]
+  );
+};
+
+export const encodeInitializeData = (): string => {
+  const delegateInterface = new ethers.Interface(require('../abi/Delegate.json'));
+  return delegateInterface.encodeFunctionData('initialize', []);
+};
