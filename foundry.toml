@@ -4,11 +4,14 @@ out = "out"
 libs = ["lib"]
 remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
     "forge-std/=lib/forge-std/src/"
 ]
 gas_reports = ["NFTMarket"]
+fs_permissions = [{ access = "read-write", path = "./" }]
 
 [rpc_endpoints]
 localhost = "http://127.0.0.1:8545"
+sepolia = "https://sepolia.infura.io/v3/YOUR_INFURA_KEY"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
