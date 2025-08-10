@@ -13,8 +13,14 @@ contract DeployScript is Script {
         // Deploy MemeFactory
         MemeFactory factory = new MemeFactory();
         
+        console.log("=== Meme Factory Deployment Complete ===");
         console.log("MemeFactory deployed at:", address(factory));
         console.log("Owner:", factory.owner());
+        console.log("Platform Fee:", factory.PLATFORM_FEE_BPS(), "basis points (5%)");
+        console.log("Uniswap Router:", address(factory.UNISWAP_ROUTER()));
+        console.log("Uniswap Factory:", address(factory.UNISWAP_FACTORY()));
+        console.log("WETH Address:", factory.WETH());
+        console.log("Contract Paused:", factory.paused());
         
         vm.stopBroadcast();
     }

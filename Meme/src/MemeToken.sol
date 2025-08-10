@@ -144,6 +144,38 @@ contract MemeToken is ERC20, Ownable {
     }
     
     /**
+     * @dev 为流动性添加铸造指定数量的代币（仅所有者可调用）
+     * @param to 接收代币的地址
+     * @param amount 要铸造的代币数量
+     * 
+     * 流动性铸造机制：
+     * 1. 验证接收地址和数量有效性
+     * 2. 检查是否超过供应量上限
+     * 3. 更新当前供应量计数
+     * 4. 执行ERC20标准铸造
+     * 5. 发出铸造事件
+     * 
+     * 与普通mint的区别：
+     * - 可以铸造任意数量（不限于perMint）
+     * - 专门用于流动性添加场景
+     * - 仍然受总供应量上限约束
+     */
+    function mintForLiquidity(address to, uint256 amount) external onlyOwner {
+        require(to != address(0), "Cannot mint to zero address");
+        require(amount > 0, "Amount must be greater than 0");
+        require(currentSupply + amount <= totalSupplyCap, "Cannot mint more tokens");
+        
+        // 更新供应量计数
+        currentSupply += amount;
+        
+        // 执行ERC20铸造
+        _mint(to, amount);
+        
+        // 发出铸造事件
+        emit TokenMinted(to, amount);
+    }
+    
+    /**
      * @dev 重写符号函数以返回自定义符号
      * @return 代币符号字符串
      * 

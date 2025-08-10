@@ -55,6 +55,7 @@ contract MemeFactoryTest is Test {
         factory = new MemeFactory();
         
         // Give users some ETH
+        vm.deal(owner, 10000 ether);  // Give owner (test contract) some ETH
         vm.deal(creator, 10000 ether);
         vm.deal(user1, 10000 ether);
         vm.deal(user2, 10000 ether);
@@ -80,7 +81,8 @@ contract MemeFactoryTest is Test {
             uint256 price,
             address tokenCreator,
             uint256 currentSupply,
-            bool canMint
+            bool canMint,
+            bool liquidityAdded
         ) = factory.getTokenInfo(tokenAddr);
         
         assertEq(symbol, SYMBOL);
@@ -227,11 +229,11 @@ contract MemeFactoryTest is Test {
         (uint256 expectedTotalCost, uint256 expectedPlatformFee, uint256 expectedCreatorFee) = 
             factory.calculateMintCost(tokenAddr);
         
-        // Verify 1% platform fee
-        uint256 expectedPlatformFeeCalculated = (expectedTotalCost * 100) / 10000;
+        // Verify 5% platform fee
+        uint256 expectedPlatformFeeCalculated = (expectedTotalCost * 500) / 10000;
         assertEq(expectedPlatformFee, expectedPlatformFeeCalculated);
         
-        // Verify 99% creator fee
+        // Verify 95% creator fee
         uint256 expectedCreatorFeeCalculated = expectedTotalCost - expectedPlatformFeeCalculated;
         assertEq(expectedCreatorFee, expectedCreatorFeeCalculated);
     }
@@ -276,7 +278,8 @@ contract MemeFactoryTest is Test {
             uint256 price,
             address tokenCreator,
             uint256 currentSupply,
-            bool canMint
+            bool canMint,
+            bool liquidityAdded
         ) = factory.getTokenInfo(tokenAddr);
         
         assertEq(symbol, SYMBOL);
@@ -292,7 +295,7 @@ contract MemeFactoryTest is Test {
         factory.mintMeme{value: PER_MINT * PRICE}(tokenAddr);
         
         // Test token info after minting
-        (, , , , , currentSupply, canMint) = factory.getTokenInfo(tokenAddr);
+        (, , , , , currentSupply, canMint, ) = factory.getTokenInfo(tokenAddr);
         assertEq(currentSupply, PER_MINT);
         assertTrue(canMint);
     }
