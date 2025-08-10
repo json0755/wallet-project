@@ -1,0 +1,19 @@
+No files changed, compilation skipped
+
+Ran 13 tests for test/MemeFactory.t.sol:MemeFactoryTest
+[PASS] testDeployMeme() (gas: 389036)
+[PASS] testDeployMemeInvalidParameters() (gas: 32735)
+[PASS] testEmergencyWithdraw() (gas: 24048)
+[PASS] testFeeDistribution() (gas: 381375)
+[PASS] testGetTokenByIndexOutOfBounds() (gas: 385140)
+[PASS] testMemeTokenDirectAccess() (gas: 393851)
+[PASS] testMintMeme() (gas: 523977)
+[PASS] testMintMemeExceedsTotalSupply() (gas: 587624)
+[PASS] testMintMemeInsufficientPayment() (gas: 399996)
+[PASS] testMintMemeNonexistentToken() (gas: 28833)
+[PASS] testMintMemeWithExcessPayment() (gas: 522063)
+[PASS] testMultipleTokensAndMints() (gas: 988084)
+[PASS] testTokenInfo() (gas: 523967)
+Suite result: ok. 13 passed; 0 failed; 0 skipped; finished in 1.70ms (3.09ms CPU time)
+
+Ran 1 test suite in 1.04s (1.70ms CPU time): 13 tests passed, 0 failed, 0 skipped (13 total tests)
