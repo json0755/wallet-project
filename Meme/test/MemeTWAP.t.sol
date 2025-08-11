@@ -443,4 +443,146 @@ contract MemeTWAPTest is Test {
         vm.expectRevert("Index out of bounds");
         twapContract.getPriceRecord(memeToken, 1);
     }
+
+    /**
+     * @dev 测试多时间点交易场景
+     * 模拟Meme代币在一天内的多个交易，包含价格波动和TWAP计算
+     */
+    function testMultipleTradesOverTime() public {
+        _testDayTradingPhase1();
+        _testDayTradingPhase2();
+    }
+    
+    function _testDayTradingPhase1() internal {
+        uint256 startTime = block.timestamp;
+        
+        // === 模拟一天内的6个交易时点 ===
+        vm.warp(startTime + 9 * HOUR);
+        twapContract.updatePrice(memeToken, 1000);
+        
+        vm.warp(startTime + 11 * HOUR);
+        twapContract.updatePrice(memeToken, 1200);
+        
+        vm.warp(startTime + 13 * HOUR);
+        twapContract.updatePrice(memeToken, 1500);
+        
+        vm.warp(startTime + 15 * HOUR);
+        twapContract.updatePrice(memeToken, 1300);
+        
+        vm.warp(startTime + 17 * HOUR);
+        twapContract.updatePrice(memeToken, 800);
+        
+        vm.warp(startTime + 20 * HOUR);
+        twapContract.updatePrice(memeToken, 1100);
+        
+        // === 验证价格历史记录 ===
+        assertEq(twapContract.getPriceHistoryLength(memeToken), 6, "Should have 6 price records");
+        
+        // 验证关键时间点的价格
+        (uint256 price1,,) = twapContract.getPriceRecord(memeToken, 0);
+        assertEq(price1, 1000, "First price should be 1000");
+        
+        (uint256 price6,,) = twapContract.getPriceRecord(memeToken, 5);
+        assertEq(price6, 1100, "Last price should be 1100");
+    }
+    
+    function _testDayTradingPhase2() internal {
+        // 获取当前时间（应该是最后一次更新的时间：startTime + 20 * HOUR）
+        uint256 currentTime = block.timestamp;
+        uint256 originalStartTime = currentTime - 20 * HOUR; // 推算原始开始时间
+        
+        // === 计算TWAP并验证 ===
+        uint256 morningTWAP = twapContract.calculateTWAP(
+            memeToken,
+            originalStartTime + 9 * HOUR,
+            originalStartTime + 13 * HOUR
+        );
+        assertEq(morningTWAP, 1100, "Morning TWAP should be 1100");
+        
+        // 验证当前价格
+        (uint256 currentPrice,) = twapContract.getCurrentPrice(memeToken);
+        assertEq(currentPrice, 1100, "Current price should be 1100");
+        
+        // === 夜间交易 ===
+        vm.warp(originalStartTime + 23 * HOUR);
+        twapContract.updatePrice(memeToken, 1050);
+        
+        assertEq(twapContract.getPriceHistoryLength(memeToken), 7, "Should have 7 records");
+        (uint256 finalPrice,) = twapContract.getCurrentPrice(memeToken);
+        assertEq(finalPrice, 1050, "Final price should be 1050");
+    }
+
+    /**
+     * @dev 测试高频交易场景
+     * 模拟短时间内的多次价格更新
+     */
+    function testHighFrequencyTrading() public {
+        uint256 startTime = block.timestamp;
+        uint256[] memory prices = new uint256[](5);
+        prices[0] = 1000;
+        prices[1] = 1050;
+        prices[2] = 980;
+        prices[3] = 1020;
+        prices[4] = 1100;
+        
+        // 每隔2分钟更新一次价格
+        for (uint256 i = 0; i < prices.length; i++) {
+            vm.warp(startTime + (i + 1) * 120); // 每次间隔2分钟
+            twapContract.updatePrice(memeToken, prices[i]);
+        }
+        
+        // 验证所有价格都被记录
+        uint256 historyLength = twapContract.getPriceHistoryLength(memeToken);
+        assertEq(historyLength, 5, "Should have 5 price records");
+        
+        // 验证最后的价格
+        (uint256 lastPrice,) = twapContract.getCurrentPrice(memeToken);
+        assertEq(lastPrice, 1100, "Last price should be 1100");
+        
+        // 计算10分钟内的TWAP
+        uint256 shortTermTWAP = twapContract.calculateRecentTWAP(memeToken, 10 * 60);
+        assertTrue(shortTermTWAP > 0, "Short term TWAP should be calculated");
+    }
+
+    /**
+     * @dev 测试价格波动极端场景
+     * 模拟价格大幅波动的情况
+     */
+    function testExtremeVolatility() public {
+        uint256 startTime = block.timestamp;
+        
+        // 价格从1000开始
+        vm.warp(startTime + 61);
+        twapContract.updatePrice(memeToken, 1000);
+        
+        // 价格暴涨到5000
+        vm.warp(startTime + 2 * HOUR);
+        twapContract.updatePrice(memeToken, 5000);
+        
+        // 价格暴跌到100
+        vm.warp(startTime + 4 * HOUR);
+        twapContract.updatePrice(memeToken, 100);
+        
+        // 价格回归到1500
+        vm.warp(startTime + 6 * HOUR);
+        twapContract.updatePrice(memeToken, 1500);
+        
+        // 验证价格历史
+        uint256 historyLength = twapContract.getPriceHistoryLength(memeToken);
+        assertEq(historyLength, 4, "Should have 4 price records");
+        
+        // 计算整个时期的TWAP
+        uint256 volatileTWAP = twapContract.calculateTWAP(
+            memeToken,
+            startTime + 61,
+            startTime + 6 * HOUR
+        );
+        
+        // TWAP应该平滑极端波动
+        assertTrue(volatileTWAP > 100 && volatileTWAP < 5000, "TWAP should smooth extreme volatility");
+        
+        // 验证当前价格
+        (uint256 currentPrice,) = twapContract.getCurrentPrice(memeToken);
+        assertEq(currentPrice, 1500, "Current price should be 1500");
+    }
 }
